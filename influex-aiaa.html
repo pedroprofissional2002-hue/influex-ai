@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INFLUEX AI — Crie Influencers Virtuais com IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #060606;
+  --bg2: #0c0c0c;
+  --card: #101010;
+  --card2: #141414;
+  --neon: #D9FF3F;
+  --neon2: #B7E62E;
+  --neon-glow: rgba(217,255,63,0.35);
+  --neon-dim: rgba(217,255,63,0.08);
+  --text: #FFFFFF;
+  --muted: #888;
+  --muted2: #555;
+  --border: rgba(255,255,255,0.07);
+  --border-neon: rgba(217,255,63,0.2);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+.grid-bg{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(217,255,63,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(217,255,63,0.04) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+.page{display:none;position:relative;z-index:1;min-height:100vh;}
+.page.active{display:block;}
+
+.display{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:1.05;letter-spacing:-0.03em;}
+.heading{font-family:'Space Grotesk',sans-serif;font-weight:600;line-height:1.1;letter-spacing:-0.015em;}
+.label{font-family:'Inter',sans-serif;font-weight:600;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;}
+
+/* HEADER */
+#header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,6,6,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+}
+.logo{font-family:'Orbitron',sans-serif;font-weight:600;font-size:1.1rem;letter-spacing:.06em;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:.5rem;text-transform:uppercase;}
+.logo span{color:var(--neon);}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);display:inline-block;}
+nav{display:flex;align-items:center;gap:2rem;}
+nav a{color:var(--muted);font-size:.875rem;text-decoration:none;font-family:'Inter',sans-serif;transition:.2s;cursor:pointer;}
+nav a:hover{color:var(--text);}
+.header-actions{display:flex;gap:.75rem;align-items:center;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.4rem;border-radius:8px;font-family:'Inter',sans-serif;font-weight:500;font-size:.875rem;cursor:pointer;border:none;transition:all .2s;text-decoration:none;white-space:nowrap;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.15);}
+.btn-neon{background:var(--neon);color:#000;font-weight:600;box-shadow:0 0 20px var(--neon-glow);}
+.btn-neon:hover{background:#e8ff50;box-shadow:0 0 35px rgba(217,255,63,0.5);transform:translateY(-1px);}
+.btn-outline-neon{background:transparent;color:var(--neon);border:1px solid var(--border-neon);}
+.btn-outline-neon:hover{background:var(--neon-dim);box-shadow:0 0 20px rgba(217,255,63,0.1);}
+.btn-dark{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-dark:hover{background:#1a1a1a;border-color:rgba(255,255,255,0.12);}
+.btn-lg{padding:.9rem 2rem;font-size:1rem;border-radius:10px;}
+.btn-sm{padding:.45rem 1rem;font-size:.8rem;border-radius:6px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:100px;font-size:.75rem;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:.03em;}
+.badge-neon{background:rgba(217,255,63,0.1);color:var(--neon);border:1px solid rgba(217,255,63,0.2);}
+.badge-gray{background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border);}
+
+/* INPUTS */
+.form-group{display:flex;flex-direction:column;gap:.5rem;}
+.form-label{font-size:.8rem;color:var(--muted);font-weight:500;font-family:'Inter',sans-serif;}
+.form-input,.form-select,.form-textarea{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;transition:.2s;outline:none;width:100%;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--border-neon);box-shadow:0 0 0 3px rgba(217,255,63,0.06);}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--muted2);}
+.form-select option{background:#1a1a1a;}
+.form-textarea{resize:vertical;min-height:100px;}
+.checkbox-group{display:flex;align-items:center;gap:.6rem;cursor:pointer;}
+.checkbox-group input{width:17px;height:17px;accent-color:var(--neon);cursor:pointer;}
+.checkbox-group label{font-size:.875rem;color:var(--muted);cursor:pointer;}
+
+/* ALERTS */
+.alert{padding:.75rem 1rem;border-radius:8px;font-size:.85rem;margin-bottom:1rem;display:none;}
+.alert-ok{background:rgba(217,255,63,0.08);color:var(--neon);border:1px solid rgba(217,255,63,0.2);}
+.alert-err{background:rgba(255,80,80,0.08);color:#ff6b6b;border:1px solid rgba(255,80,80,0.2);}
+
+/* LAYOUT */
+.divider{height:1px;background:var(--border);margin:2rem 0;}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem;}
+.section{padding:6rem 0;}
+
+/* SECTION TITLE */
+.section-title{text-align:center;margin-bottom:3.5rem;}
+.section-title .label{margin-bottom:.75rem;display:block;color:var(--neon);}
+.section-title h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(1.75rem,3.5vw,2.75rem);background:linear-gradient(135deg,#fff 70%,#888);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.75rem;letter-spacing:-0.02em;}
+.section-title p{color:var(--muted);font-size:1rem;max-width:520px;margin:0 auto;}
+
+/* HERO */
+.hero{padding:7rem 0 5rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(217,255,63,0.06);border:1px solid rgba(217,255,63,0.15);border-radius:100px;padding:.4rem 1rem;font-size:.75rem;font-family:'Inter',sans-serif;font-weight:600;color:var(--neon);letter-spacing:.08em;margin-bottom:1.5rem;text-transform:uppercase;}
+.hero-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--neon);box-shadow:0 0 8px var(--neon);}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);margin-bottom:1.5rem;background:linear-gradient(135deg,#fff 60%,#aaa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--neon),var(--neon2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{font-size:1.1rem;color:var(--muted);line-height:1.7;margin-bottom:2.5rem;max-width:500px;}
+.hero-ctas{display:flex;gap:1rem;flex-wrap:wrap;}
+
+/* MOCKUP */
+.hero-mockup{position:relative;}
+.mockup-window{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.6),0 0 60px rgba(217,255,63,0.05);}
+.mockup-bar{background:var(--card2);padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid var(--border);}
+.mockup-dot{width:10px;height:10px;border-radius:50%;}
+.mockup-body{padding:1.5rem;}
+.mock-persona{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.mock-img{height:160px;border-radius:10px;background:linear-gradient(135deg,#1a1a1a,#252525);display:flex;align-items:center;justify-content:center;font-size:3rem;position:relative;overflow:hidden;border:1px solid var(--border);}
+.mock-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);}
+.mock-img-tag{position:absolute;bottom:.6rem;left:.6rem;z-index:1;background:rgba(217,255,63,0.9);color:#000;font-size:.62rem;font-family:'Inter',sans-serif;font-weight:700;padding:.2rem .5rem;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;}
+.mock-stats{display:flex;flex-direction:column;gap:.75rem;}
+.mock-stat{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.75rem;}
+.mock-stat-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:var(--neon);}
+.mock-stat-label{font-size:.7rem;color:var(--muted);margin-top:.1rem;}
+.mock-progress-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:.5rem;}
+.mock-progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--neon),var(--neon2));}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:16px;overflow:hidden;border:1px solid var(--border);}
+.stat-item{background:var(--card);padding:2rem;text-align:center;}
+.stat-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.5rem;color:var(--neon);display:block;text-shadow:0 0 30px rgba(217,255,63,0.3);}
+.stat-desc{color:var(--muted);font-size:.9rem;margin-top:.25rem;}
+
+/* STEPS */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;position:relative;transition:.3s;}
+.step-card:hover{border-color:var(--border-neon);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,0.4),0 0 20px rgba(217,255,63,0.05);}
+.step-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:3rem;color:rgba(217,255,63,0.12);position:absolute;top:1.25rem;right:1.5rem;line-height:1;}
+.step-icon{width:48px;height:48px;border-radius:12px;background:rgba(217,255,63,0.08);border:1px solid rgba(217,255,63,0.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.25rem;}
+.step-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.1rem;margin-bottom:.5rem;}
+.step-desc{color:var(--muted);font-size:.9rem;line-height:1.6;}
+
+/* DEMO */
+.demo-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:1rem;margin-top:3rem;align-items:center;}
+.demo-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:.3s;}
+.demo-card:hover{border-color:var(--border-neon);transform:translateY(-3px);}
+.demo-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;border-bottom:1px solid var(--border);}
+.demo-arrow{display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--neon);padding:1rem;}
+.demo-label{padding:.75rem 1rem;font-size:.8rem;color:var(--muted);}
+.demo-type{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.85rem;color:var(--text);}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;transition:.3s;cursor:default;}
+.feature-card:hover{border-color:rgba(217,255,63,0.15);background:#121212;}
+.feature-icon{font-size:1.5rem;margin-bottom:1rem;width:42px;height:42px;border-radius:10px;background:rgba(217,255,63,0.06);border:1px solid rgba(217,255,63,0.1);display:flex;align-items:center;justify-content:center;}
+.feature-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem;margin-bottom:.4rem;}
+.feature-desc{color:var(--muted);font-size:.85rem;line-height:1.6;}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:820px;margin:0 auto;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;position:relative;transition:.3s;}
+.plan-card.popular{border-color:var(--neon);background:linear-gradient(135deg,rgba(217,255,63,0.04),transparent);box-shadow:0 0 40px rgba(217,255,63,0.08);}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--neon);color:#000;font-family:'Inter',sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.1em;padding:.35rem 1rem;border-radius:100px;white-space:nowrap;text-transform:uppercase;}
+.plan-name{font-family:'Inter',sans-serif;font-weight:600;font-size:.8rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.75rem;}
+.plan-price{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.75rem;margin-bottom:.25rem;line-height:1;}
+.plan-price sup{font-size:1.25rem;font-weight:600;color:var(--muted);}
+.plan-price span{font-size:1rem;font-weight:400;color:var(--muted);}
+.plan-credits{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:6px;background:rgba(217,255,63,0.08);color:var(--neon);font-family:'Inter',sans-serif;font-size:.75rem;font-weight:600;margin:.75rem 0 1.5rem;}
+.plan-features{display:flex;flex-direction:column;gap:.75rem;margin-bottom:2rem;}
+.plan-feature{display:flex;align-items:flex-start;gap:.6rem;font-size:.875rem;color:var(--muted);}
+.plan-feature::before{content:'✓';color:var(--neon);font-weight:700;flex-shrink:0;margin-top:1px;}
+
+/* FAQ */
+.faq-list{display:flex;flex-direction:column;gap:.75rem;max-width:720px;margin:0 auto;}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.faq-q{padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.2s;gap:1rem;font-weight:500;font-size:.95rem;}
+.faq-q:hover{background:var(--card2);}
+.faq-icon{width:28px;height:28px;border-radius:6px;background:rgba(217,255,63,0.08);color:var(--neon);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;transition:.3s;}
+.faq-a{display:none;padding:0 1.5rem 1.25rem;color:var(--muted);font-size:.9rem;line-height:1.7;border-top:1px solid var(--border);padding-top:1rem;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-icon{transform:rotate(45deg);}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:3rem 0 2rem;margin-top:4rem;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:2.5rem;}
+.footer-brand p{color:var(--muted);font-size:.875rem;line-height:1.7;margin-top:.75rem;max-width:280px;}
+.footer-col h5{font-family:'Inter',sans-serif;font-weight:600;font-size:.8rem;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;}
+.footer-col a{display:block;color:var(--muted);font-size:.875rem;text-decoration:none;margin-bottom:.6rem;cursor:pointer;transition:.2s;}
+.footer-col a:hover{color:var(--text);}
+.footer-bottom{border-top:1px solid var(--border);padding-top:1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.footer-bottom p{color:var(--muted2);font-size:.8rem;}
+
+/* AUTH */
+#auth{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;padding-top:90px;}
+.auth-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;}
+.auth-logo{text-align:center;margin-bottom:2rem;}
+.auth-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.5rem;text-align:center;margin-bottom:.5rem;}
+.auth-sub{text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:2rem;}
+.auth-form{display:flex;flex-direction:column;gap:1.25rem;}
+.auth-divider{display:flex;align-items:center;gap:1rem;margin:.5rem 0;}
+.auth-divider span{color:var(--muted2);font-size:.8rem;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.auth-footer{text-align:center;margin-top:1.5rem;font-size:.875rem;color:var(--muted);}
+.auth-footer a{color:var(--neon);text-decoration:none;cursor:pointer;}
+
+/* DASHBOARD */
+#dashboard{display:flex;min-height:100vh;}
+.sidebar{width:240px;flex-shrink:0;background:var(--card);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.25rem;border-bottom:1px solid var(--border);}
+.sidebar-nav{flex:1;padding:1rem .75rem;overflow-y:auto;}
+.nav-section-label{font-size:.65rem;font-family:'Inter',sans-serif;font-weight:600;color:var(--muted2);letter-spacing:.12em;text-transform:uppercase;padding:.5rem .75rem .4rem;margin-top:.75rem;}
+.nav-item{display:flex;align-items:center;gap:.75rem;padding:.7rem .75rem;border-radius:9px;color:var(--muted);font-size:.875rem;font-weight:500;cursor:pointer;transition:.15s;margin-bottom:.15rem;}
+.nav-item:hover{background:rgba(255,255,255,0.04);color:var(--text);}
+.nav-item.active{background:rgba(217,255,63,0.08);color:var(--neon);border:1px solid rgba(217,255,63,0.12);}
+.nav-item .nav-icon{font-size:1rem;flex-shrink:0;width:20px;text-align:center;}
+.sidebar-credits{padding:1rem .75rem 1.25rem;border-top:1px solid var(--border);}
+.credits-bar-wrap{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:.75rem;}
+.credits-header{display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:.5rem;}
+.credits-header span:first-child{color:var(--muted);}
+.credits-header span:last-child{color:var(--neon);font-weight:600;}
+.credits-bar{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.credits-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));border-radius:3px;}
+.topbar{position:fixed;top:0;left:240px;right:0;height:64px;background:rgba(10,10,10,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.75rem;z-index:40;gap:1rem;}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;flex:1;}
+.topbar-actions{display:flex;align-items:center;gap:.75rem;}
+.user-chip{display:flex;align-items:center;gap:.6rem;background:var(--card2);border:1px solid var(--border);border-radius:100px;padding:.4rem .85rem .4rem .5rem;cursor:pointer;transition:.2s;}
+.user-chip:hover{border-color:rgba(255,255,255,0.12);}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--neon),#5eff8e);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#000;flex-shrink:0;}
+.user-info .user-name{font-weight:600;color:var(--text);font-size:.8rem;display:block;}
+.user-info .user-plan{font-size:.7rem;color:var(--neon);}
+.main-content{margin-left:240px;padding-top:64px;min-height:100vh;flex:1;}
+.page-content{padding:2rem;}
+
+/* DASH STATS */
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.dash-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;}
+.dash-stat-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:1rem;background:rgba(217,255,63,0.08);border:1px solid rgba(217,255,63,0.1);}
+.dash-stat-val{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.75rem;line-height:1;margin-bottom:.25rem;}
+.dash-stat-label{font-size:.8rem;color:var(--muted);}
+.quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.quick-action{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center;cursor:pointer;transition:.25s;}
+.quick-action:hover{border-color:var(--border-neon);transform:translateY(-3px);background:#121212;}
+.qa-icon{font-size:1.75rem;margin-bottom:.75rem;}
+.qa-label{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.875rem;margin-bottom:.25rem;}
+.qa-desc{font-size:.75rem;color:var(--muted);}
+.recent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.recent-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.2s;}
+.recent-item:hover{border-color:var(--border-neon);}
+.recent-thumb{height:140px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--card2);border-bottom:1px solid var(--border);}
+.recent-info{padding:.75rem;}
+.recent-name{font-weight:600;font-size:.85rem;margin-bottom:.25rem;}
+.recent-meta{font-size:.75rem;color:var(--muted);}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+.section-header h3{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;}
+.page-header{margin-bottom:2rem;}
+.page-header h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.5rem;margin-bottom:.35rem;}
+.page-header p{color:var(--muted);font-size:.9rem;}
+
+/* PERSONA PREVIEW */
+.persona-preview{background:var(--card2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.preview-placeholder{height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;font-size:3rem;border-bottom:1px solid var(--border);}
+.preview-placeholder p{font-size:13px;color:var(--muted);}
+.preview-info{padding:1rem;}
+.preview-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:.25rem;}
+.preview-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;}
+.preview-tag{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:.2rem .6rem;font-size:.72rem;color:var(--muted);}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:.2s;}
+.upload-zone:hover{border-color:rgba(217,255,63,0.25);background:rgba(217,255,63,0.02);}
+.upload-icon{font-size:2rem;margin-bottom:.75rem;}
+.upload-text{font-size:.85rem;color:var(--muted);}
+.upload-text strong{color:var(--neon);}
+
+/* GALLERY */
+.img-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.5rem;}
+.gallery-item{background:var(--card2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.gallery-thumb{height:180px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;border-bottom:1px solid var(--border);cursor:pointer;transition:.2s;}
+.gallery-thumb:hover{background:#1a1a1a;}
+.gallery-actions{padding:.6rem;display:flex;gap:.5rem;}
+
+/* VIDEO */
+.video-preview{background:var(--card2);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:360px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;}
+.video-preview-icon{font-size:3rem;opacity:.3;}
+.play-btn{width:56px;height:56px;border-radius:50%;background:var(--neon);color:#000;display:flex;align-items:center;justify-content:center;font-size:1.25rem;cursor:pointer;box-shadow:0 0 30px rgba(217,255,63,0.4);}
+
+/* MOTION */
+.motion-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.motion-result{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;}
+
+/* ALTER */
+.alter-grid{display:grid;grid-template-columns:300px 1fr;gap:1.5rem;}
+.alter-preview{background:var(--card2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.alter-controls{display:flex;flex-direction:column;gap:1rem;}
+
+/* CREDITS */
+.credits-hero{background:linear-gradient(135deg,rgba(217,255,63,0.05),transparent);border:1px solid rgba(217,255,63,0.12);border-radius:16px;padding:2rem;margin-bottom:2rem;display:flex;align-items:center;gap:2rem;}
+.credits-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:3.5rem;color:var(--neon);line-height:1;flex-shrink:0;}
+.history-table{width:100%;border-collapse:collapse;}
+.history-table th{text-align:left;padding:.75rem 1rem;font-size:.72rem;color:var(--muted2);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.history-table td{padding:.875rem 1rem;font-size:.875rem;border-bottom:1px solid var(--border);color:var(--muted);}
+.history-table td:first-child{color:var(--text);}
+.history-table tr:last-child td{border-bottom:none;}
+
+/* FILES */
+.files-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+.file-filters{display:flex;gap:.5rem;margin-bottom:1.5rem;}
+.filter-btn{padding:.45rem 1rem;border-radius:7px;font-size:.8rem;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.filter-btn:hover{color:var(--text);}
+.filter-btn.active{background:rgba(217,255,63,0.08);color:var(--neon);border-color:rgba(217,255,63,0.2);}
+
+/* RANGE */
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--neon);box-shadow:0 0 8px rgba(217,255,63,0.5);cursor:pointer;}
+
+/* LOADING */
+.generating{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;height:300px;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--neon);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.generating p{color:var(--muted);font-size:.875rem;}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:2rem;right:2rem;background:var(--card);border:1px solid var(--border-neon);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;z-index:200;box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 20px rgba(217,255,63,0.08);transform:translateY(100px);opacity:0;transition:.3s cubic-bezier(.34,1.56,.64,1);max-width:320px;}
+.notif.show{transform:translateY(0);opacity:1;}
+.notif-icon{font-size:1.1rem;}
+.notif-text{font-size:.875rem;}
+.notif-text strong{display:block;font-weight:600;color:var(--text);}
+.notif-text span{color:var(--muted);}
+
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px;}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15);}
+
+@media(max-width:768px){
+  #header nav{display:none;}
+  .hero{grid-template-columns:1fr;}.hero-mockup{display:none;}
+  .steps-grid,.features-grid,.pricing-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+  .stats-grid{grid-template-columns:1fr;}
+  .sidebar{width:200px;}.main-content{margin-left:200px;}.topbar{left:200px;}
+  .dash-stats{grid-template-columns:1fr 1fr;}.quick-actions{grid-template-columns:1fr 1fr;}
+  .motion-grid{grid-template-columns:1fr;}.alter-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <div class="notif-icon">✅</div>
+  <div class="notif-text">
+    <strong id="notif-title">Sucesso!</strong>
+    <span id="notif-msg">Operação concluída.</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="logo" onclick="showPage('landing')"><div class="logo-dot"></div>INFLUEX<span> AI</span></div>
+  <nav>
+    <a onclick="scrollToSection('how')">Como Funciona</a>
+    <a onclick="scrollToSection('features')">Recursos</a>
+    <a onclick="scrollToSection('pricing')">Planos</a>
+    <a onclick="scrollToSection('faq')">FAQ</a>
+  </nav>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="showPage('auth');switchAuth('login')">Entrar</button>
+    <button class="btn btn-neon" onclick="showPage('auth');switchAuth('register')">Cadastrar</button>
+  </div>
+</header>
+
+<!-- ============ LANDING ============ -->
+<div class="page active" id="page-landing">
+  <section style="padding-top:80px;">
+    <div class="container">
+      <div class="hero">
+        <div class="hero-content">
+          <div class="hero-eyebrow">✦ PLATAFORMA DE IA PARA INFLUENCERS</div>
+          <h1 class="display">Crie uma <em>Influencer</em> em segundos e domine qualquer nicho</h1>
+          <p>Gere vídeos hiper-realistas prontos para monetizar, escalar e viralizar em todas as redes sem depender de ninguém.</p>
+          <div class="hero-ctas">
+            <button class="btn btn-neon btn-lg" onclick="scrollToSection('pricing')">Ver Planos</button>
+            <button class="btn btn-ghost btn-lg" onclick="showPage('auth');switchAuth('register')">Testar Plataforma</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:1.25rem;margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border);">
+            <div style="display:flex;">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff6b9d,#c026d3);border:2px solid var(--bg);margin-left:-6px;"></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#3b82f6);border:2px solid var(--bg);margin-left:-6px;"></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--neon),#22c55e);border:2px solid var(--bg);margin-left:-6px;"></div>
+            </div>
+            <div>
+              <div style="font-size:.8rem;color:var(--text);font-weight:600;">+4.200 criadores ativos</div>
+              <div style="font-size:.75rem;color:var(--muted);">monetizando com IA agora</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-mockup">
+          <div style="position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(217,255,63,0.06),transparent);border-radius:50%;pointer-events:none;"></div>
+          <div class="mockup-window">
+            <div class="mockup-bar">
+              <div class="mockup-dot" style="background:#ff5f57;"></div>
+              <div class="mockup-dot" style="background:#febc2e;"></div>
+              <div class="mockup-dot" style="background:#28c840;"></div>
+              <div style="flex:1;background:rgba(255,255,255,0.04);border-radius:4px;height:20px;margin-left:.5rem;"></div>
+            </div>
+            <div class="mockup-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <span class="label" style="color:var(--muted);">Dashboard</span>
+                <span class="badge badge-neon" style="font-size:.65rem;">Builder</span>
+              </div>
+              <div class="mock-persona">
+                <div class="mock-img" style="background:linear-gradient(135deg,#1a1a2e,#16213e);">
+                  <span style="font-size:2.5rem;z-index:1;">👩</span>
+                  <div class="mock-img-tag">SOPHIA AI</div>
+                </div>
+                <div class="mock-stats">
+                  <div class="mock-stat"><div class="mock-stat-num">1.2K</div><div class="mock-stat-label">Créditos</div><div class="mock-progress-bar"><div class="mock-progress-fill" style="width:82%;"></div></div></div>
+                  <div class="mock-stat"><div class="mock-stat-num">47</div><div class="mock-stat-label">Vídeos Gerados</div><div class="mock-progress-bar"><div class="mock-progress-fill" style="width:65%;"></div></div></div>
+                  <div class="mock-stat"><div class="mock-stat-num">312</div><div class="mock-stat-label">Imagens</div><div class="mock-progress-bar"><div class="mock-progress-fill" style="width:45%;"></div></div></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+                <span class="badge badge-neon" style="font-size:.65rem;">⚡ Gerar Vídeo</span>
+                <span class="badge badge-gray" style="font-size:.65rem;">🎭 Motion Sync</span>
+                <span class="badge badge-gray" style="font-size:.65rem;">🖼 Imagem</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section style="padding:0 0 5rem;"><div class="container"><div class="stats-grid">
+    <div class="stat-item"><span class="stat-num">237M+</span><div class="stat-desc">Visualizações geradas</div></div>
+    <div class="stat-item"><span class="stat-num">100K+</span><div class="stat-desc">Vídeos criados</div></div>
+    <div class="stat-item"><span class="stat-num">4.2K+</span><div class="stat-desc">Criadores monetizando todo dia</div></div>
+  </div></div></section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how"><div class="container">
+    <div class="section-title"><span class="label">Como Funciona</span><h2>Do zero ao conteúdo em minutos</h2><p>Três passos simples para criar sua influencer virtual e começar a monetizar.</p></div>
+    <div class="steps-grid">
+      <div class="step-card"><div class="step-num">01</div><div class="step-icon">✨</div><div class="step-title">Crie sua Influencer</div><p class="step-desc">Defina aparência, nicho, personalidade e estilo. Nossa IA gera uma persona única e realista em segundos.</p></div>
+      <div class="step-card"><div class="step-num">02</div><div class="step-icon">🎬</div><div class="step-title">Gere Imagem ou Vídeo</div><p class="step-desc">Insira um produto, escreva um prompt e gere conteúdo profissional pronto para qualquer rede social.</p></div>
+      <div class="step-card"><div class="step-num">03</div><div class="step-icon">💰</div><div class="step-title">Baixe e Monetize</div><p class="step-desc">Exporte em alta qualidade e publique diretamente. Escale sem aparecer, sem câmera, sem equipe.</p></div>
+    </div>
+  </div></section>
+
+  <!-- DEMO FLOW -->
+  <section style="padding:0 0 5rem;"><div class="container">
+    <div class="section-title"><span class="label">Demonstração Visual</span><h2>Veja o fluxo em ação</h2><p>Da referência ao resultado final com nossa tecnologia de sincronização de movimento.</p></div>
+    <div class="demo-flow">
+      <div class="demo-card"><div class="demo-img" style="background:linear-gradient(135deg,#1a0a2e,#2d1b69);">👩‍🦰</div><div class="demo-label"><div class="demo-type">Persona</div><div style="font-size:.75rem;color:var(--muted);">Imagem da influencer</div></div></div>
+      <div class="demo-arrow">→</div>
+      <div class="demo-card"><div class="demo-img" style="background:linear-gradient(135deg,#0a1628,#1e3a5f);">📦</div><div class="demo-label"><div class="demo-type">Produto</div><div style="font-size:.75rem;color:var(--muted);">Upload do produto</div></div></div>
+      <div class="demo-arrow">→</div>
+      <div class="demo-card"><div class="demo-img" style="background:linear-gradient(135deg,#0d2818,#1a4731);">🎥</div><div class="demo-label"><div class="demo-type">Vídeo Ref.</div><div style="font-size:.75rem;color:var(--muted);">Movimento de referência</div></div></div>
+      <div class="demo-arrow">→</div>
+      <div class="demo-card" style="border-color:var(--border-neon);"><div class="demo-img" style="background:linear-gradient(135deg,#1a1a0a,#2e2e0a);">🌟</div><div class="demo-label" style="background:rgba(217,255,63,0.04);"><div class="demo-type" style="color:var(--neon);">Resultado Final</div><div style="font-size:.75rem;color:var(--muted);">Vídeo pronto para publicar</div></div></div>
+    </div>
+  </div></section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features"><div class="container">
+    <div class="section-title"><span class="label">Recursos</span><h2>Tudo que você precisa para escalar</h2><p>Ferramentas profissionais de IA em uma plataforma simples e direta.</p></div>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">✨</div><div class="feature-name">Criar Influencer</div><p class="feature-desc">Crie personas únicas com aparência, nicho e estilo totalmente personalizáveis.</p></div>
+      <div class="feature-card"><div class="feature-icon">🖼</div><div class="feature-name">Gerar Imagem</div><p class="feature-desc">Imagens realistas com produto integrado na cena ou na mão da influencer.</p></div>
+      <div class="feature-card"><div class="feature-icon">🎬</div><div class="feature-name">Gerar Vídeo</div><p class="feature-desc">Transforme imagens em vídeos animados prontos para publicar e monetizar.</p></div>
+      <div class="feature-card"><div class="feature-icon">🎭</div><div class="feature-name">Motion Sync</div><p class="feature-desc">Sincronize movimentos usando vídeo de referência com precisão profissional.</p></div>
+      <div class="feature-card"><div class="feature-icon">🔄</div><div class="feature-name">Alterar Personas</div><p class="feature-desc">Troque roupa, fundo, expressão e pose com controles intuitivos.</p></div>
+      <div class="feature-card"><div class="feature-icon">⚡</div><div class="feature-name">Exportação Rápida</div><p class="feature-desc">Baixe em alta qualidade e publique em segundos em qualquer rede social.</p></div>
+    </div>
+  </div></section>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing"><div class="container">
+    <div class="section-title"><span class="label">Planos</span><h2>Escolha o plano ideal para escalar</h2><p>Crie, anime e monetize com inteligência artificial.</p></div>
+    <div class="pricing-grid">
+      <div class="plan-card">
+        <div class="plan-name">Building</div>
+        <div class="plan-price"><sup>R$</sup>97<span> /mês</span></div>
+        <div class="plan-credits">⚡ 970 créditos / mês</div>
+        <div class="plan-features">
+          <div class="plan-feature">Geração de 5 influencers por mês</div>
+          <div class="plan-feature">Criação de movimentos e vídeos</div>
+          <div class="plan-feature">Alteração de personas</div>
+          <div class="plan-feature">Geração de imagens realistas</div>
+          <div class="plan-feature">Pronto para monetizar em qualquer rede</div>
+        </div>
+        <button class="btn btn-dark" style="width:100%;justify-content:center;" onclick="showPage('auth');switchAuth('register')">Começar Agora</button>
+      </div>
+      <div class="plan-card popular">
+        <div class="popular-badge">⭐ MAIS POPULAR</div>
+        <div class="plan-name">Builder</div>
+        <div class="plan-price"><sup>R$</sup>147<span> /mês</span></div>
+        <div class="plan-credits">⚡ 1.470 créditos / mês</div>
+        <div class="plan-features">
+          <div class="plan-feature">Geração de 10 influencers por mês</div>
+          <div class="plan-feature">Criação de movimentos</div>
+          <div class="plan-feature">Alteração de personas</div>
+          <div class="plan-feature">Geração de imagens e vídeos</div>
+          <div class="plan-feature">Geração <strong>prioritária</strong></div>
+          <div class="plan-feature">Ideal para criadores e afiliados que querem escala</div>
+        </div>
+        <button class="btn btn-neon" style="width:100%;justify-content:center;" onclick="showPage('auth');switchAuth('register')">Quero o Builder</button>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq"><div class="container">
+    <div class="section-title"><span class="label">Dúvidas</span><h2>Perguntas frequentes</h2></div>
+    <div class="faq-list">
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Preciso instalar algum programa?<div class="faq-icon">+</div></div><div class="faq-a">Não. A INFLUEX AI é 100% online. Basta ter um navegador e acesso à internet para criar influencers, gerar imagens e vídeos de qualquer dispositivo.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Em quanto tempo consigo criar uma persona?<div class="faq-icon">+</div></div><div class="faq-a">Em média 30 a 60 segundos. Nossa IA processa as informações rapidamente e gera sua influencer virtual pronta para uso.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Posso usar para anúncios pagos?<div class="faq-icon">+</div></div><div class="faq-a">Sim! Todo o conteúdo gerado na INFLUEX AI pode ser usado em campanhas de tráfego pago, afiliados, dropshipping e qualquer formato de monetização digital.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Posso acessar pelo celular?<div class="faq-icon">+</div></div><div class="faq-a">Sim, a plataforma é totalmente responsiva e funciona em celulares, tablets e desktops.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">O pagamento é mensal ou único?<div class="faq-icon">+</div></div><div class="faq-a">O pagamento é mensal recorrente. Você pode cancelar quando quiser, sem burocracia. Os créditos não acumulam entre os meses.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Com quantos créditos eu consigo gerar um vídeo?<div class="faq-icon">+</div></div><div class="faq-a">Cada vídeo padrão consome entre 15 e 40 créditos, dependendo da duração e qualidade. Motion Sync consome de 30 a 60 créditos. Imagens custam 5 créditos cada.</div></div>
+    </div>
+  </div></section>
+
+  <!-- CTA -->
+  <section style="text-align:center;padding:6rem 0;"><div class="container"><div style="max-width:600px;margin:0 auto;">
+    <div class="badge badge-neon" style="margin-bottom:1.5rem;">🚀 Comece hoje</div>
+    <h2 class="display" style="font-size:clamp(2rem,4vw,3rem);margin-bottom:1rem;">Comece agora e transforme ideias em conteúdo de alto impacto</h2>
+    <p style="color:var(--muted);font-size:1.1rem;margin-bottom:2rem;">Junte-se a mais de 4.200 criadores que já estão escalando com IA.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-neon btn-lg" onclick="scrollToSection('pricing')">Ver Planos</button>
+      <button class="btn btn-ghost btn-lg" onclick="showPage('auth');switchAuth('register')">Criar conta grátis</button>
+    </div>
+  </div></div></section>
+
+  <!-- FOOTER -->
+  <footer><div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand"><div class="logo" style="margin-bottom:.75rem;"><div class="logo-dot"></div>INFLUEX<span> AI</span></div><p>Crie influencers virtuais, gere vídeos e escale conteúdo com inteligência artificial.</p></div>
+      <div class="footer-col"><h5>Plataforma</h5><a>Dashboard</a><a>Criar Influencer</a><a>Gerar Vídeo</a><a>Motion Sync</a></div>
+      <div class="footer-col"><h5>Empresa</h5><a>Sobre nós</a><a>Blog</a><a>Afiliados</a><a>Suporte</a></div>
+      <div class="footer-col"><h5>Legal</h5><a>Termos de Uso</a><a>Privacidade</a><a>Cookies</a></div>
+    </div>
+    <div class="footer-bottom"><p>© 2025 INFLUEX AI. Todos os direitos reservados.</p><p>Crie. Anime. Monetize.</p></div>
+  </div></footer>
+</div>
+
+<!-- ============ AUTH ============ -->
+<div class="page" id="page-auth">
+  <section id="auth">
+    <div class="auth-card">
+      <div class="auth-logo"><div class="logo" style="justify-content:center;font-size:1.05rem;letter-spacing:.08em;"><div class="logo-dot"></div>INFLUEX<span> AI</span></div></div>
+
+      <!-- LOGIN -->
+      <div id="form-login">
+        <div class="auth-title">Bem-vindo de volta</div>
+        <div class="auth-sub">Entre na sua conta para continuar criando</div>
+        <div class="alert alert-ok" id="lo"></div>
+        <div class="alert alert-err" id="le"></div>
+        <div class="auth-form">
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="lei" placeholder="seu@email.com"></div>
+          <div class="form-group"><label class="form-label">Senha</label><input class="form-input" type="password" id="lpi" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <div style="text-align:right;margin-top:-.5rem;"><a style="font-size:.8rem;color:var(--neon);cursor:pointer;" onclick="switchAuth('recover')">Esqueci minha senha</a></div>
+          <button class="btn btn-neon" id="lb" style="width:100%;justify-content:center;margin-top:.5rem;" onclick="doLogin()">Entrar na plataforma</button>
+        </div>
+        <div class="auth-footer">Não tem conta? <a onclick="switchAuth('register')">Cadastre-se grátis</a></div>
+        <div class="auth-footer" style="margin-top:.5rem;"><a onclick="showPage('landing')" style="color:var(--muted);font-size:.8rem;">← Voltar para o início</a></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="form-register" style="display:none;">
+        <div class="auth-title">Criar sua conta</div>
+        <div class="auth-sub">Comece grátis. Sem cartão de crédito.</div>
+        <div class="alert alert-ok" id="ro"></div>
+        <div class="alert alert-err" id="re"></div>
+        <div class="auth-form">
+          <div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" type="text" id="rni" placeholder="Seu nome"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="rei" placeholder="seu@email.com"></div>
+          <div class="form-group"><label class="form-label">Senha</label><input class="form-input" type="password" id="rpi" placeholder="Crie uma senha forte" onkeydown="if(event.key==='Enter')doRegister()"></div>
+          <button class="btn btn-neon" id="rb" style="width:100%;justify-content:center;margin-top:.5rem;" onclick="doRegister()">Criar conta grátis</button>
+        </div>
+        <div class="auth-footer">Já tem conta? <a onclick="switchAuth('login')">Entrar</a></div>
+        <div class="auth-footer" style="margin-top:.5rem;"><a onclick="showPage('landing')" style="color:var(--muted);font-size:.8rem;">← Voltar para o início</a></div>
+      </div>
+
+      <!-- RECOVER -->
+      <div id="form-recover" style="display:none;">
+        <div class="auth-title">Recuperar senha</div>
+        <div class="auth-sub">Enviaremos um link de redefinição para seu email.</div>
+        <div class="alert alert-ok" id="rco"></div>
+        <div class="alert alert-err" id="rce"></div>
+        <div class="auth-form">
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="rci" placeholder="seu@email.com"></div>
+          <button class="btn btn-neon" id="rcb" style="width:100%;justify-content:center;" onclick="doRecover()">Enviar link de recuperação</button>
+        </div>
+        <div class="auth-footer">Lembrou a senha? <a onclick="switchAuth('login')">Entrar</a></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div class="page" id="page-dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo" style="font-size:.85rem;cursor:pointer;letter-spacing:.07em;" onclick="showPage('landing')"><div class="logo-dot"></div>INFLUEX<span> AI</span></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="switchDash('home',this)"><span class="nav-icon">⊞</span> Dashboard</div>
+      <div class="nav-section-label">Criação</div>
+      <div class="nav-item" onclick="switchDash('create-persona',this)"><span class="nav-icon">✨</span> Criar Influencer</div>
+      <div class="nav-item" onclick="switchDash('gen-image',this)"><span class="nav-icon">🖼</span> Gerar Imagem</div>
+      <div class="nav-item" onclick="switchDash('gen-video',this)"><span class="nav-icon">🎬</span> Gerar Vídeo</div>
+      <div class="nav-item" onclick="switchDash('motion-sync',this)"><span class="nav-icon">🎭</span> Motion Sync</div>
+      <div class="nav-item" onclick="switchDash('alter-persona',this)"><span class="nav-icon">🔄</span> Alterar Persona</div>
+      <div class="nav-section-label">Biblioteca</div>
+      <div class="nav-item" onclick="switchDash('files',this)"><span class="nav-icon">📁</span> Arquivos</div>
+      <div class="nav-section-label">Conta</div>
+      <div class="nav-item" onclick="switchDash('credits',this)"><span class="nav-icon">⚡</span> Créditos</div>
+      <div class="nav-item" onclick="switchDash('subscription',this)"><span class="nav-icon">💎</span> Assinatura</div>
+      <div class="nav-item" onclick="switchDash('settings',this)"><span class="nav-icon">⚙</span> Configurações</div>
+    </nav>
+    <div class="sidebar-credits">
+      <div class="credits-bar-wrap">
+        <div class="credits-header"><span>Créditos</span><span id="sb-cr-txt">1.470 / 1.470</span></div>
+        <div class="credits-bar"><div class="credits-fill" id="sb-cr-bar" style="width:100%;"></div></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-actions">
+      <span class="badge badge-neon" style="font-size:.7rem;">⚡ <span id="top-cr">1.470</span> créditos</span>
+      <button class="btn btn-sm btn-outline-neon" onclick="switchDash('subscription',null)">Upgrade</button>
+      <div class="user-chip" onclick="switchDash('settings',null)">
+        <div class="user-avatar" id="top-av">?</div>
+        <div class="user-info"><span class="user-name" id="top-nm">Usuário</span><span class="user-plan">Builder</span></div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- HOME -->
+    <div class="page-content fade-in" id="dash-home">
+      <div class="page-header"><h2>Olá, <span id="dash-welcome">Criador</span> 👋</h2><p>Bem-vindo de volta. O que vamos criar hoje?</p></div>
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-icon">⚡</div><div class="dash-stat-val" style="color:var(--neon);" id="stat-cr">1.470</div><div class="dash-stat-label">Créditos disponíveis</div></div>
+        <div class="dash-stat"><div class="dash-stat-icon">✨</div><div class="dash-stat-val" id="stat-p">0</div><div class="dash-stat-label">Influencers criadas</div></div>
+        <div class="dash-stat"><div class="dash-stat-icon">🎬</div><div class="dash-stat-val" id="stat-v">0</div><div class="dash-stat-label">Vídeos gerados</div></div>
+        <div class="dash-stat"><div class="dash-stat-icon">🖼</div><div class="dash-stat-val" id="stat-i">0</div><div class="dash-stat-label">Imagens geradas</div></div>
+      </div>
+      <div class="section-header"><h3>Ações Rápidas</h3></div>
+      <div class="quick-actions">
+        <div class="quick-action" onclick="switchDash('create-persona',null)"><div class="qa-icon">✨</div><div class="qa-label">Criar Influencer</div><div class="qa-desc">Nova persona com IA</div></div>
+        <div class="quick-action" onclick="switchDash('gen-image',null)"><div class="qa-icon">🖼</div><div class="qa-label">Gerar Imagem</div><div class="qa-desc">Com produto integrado</div></div>
+        <div class="quick-action" onclick="switchDash('motion-sync',null)"><div class="qa-icon">🎭</div><div class="qa-label">Motion Sync</div><div class="qa-desc">Sincronizar movimento</div></div>
+        <div class="quick-action" onclick="switchDash('gen-video',null)"><div class="qa-icon">🎬</div><div class="qa-label">Gerar Vídeo</div><div class="qa-desc">Anime sua influencer</div></div>
+      </div>
+      <div class="section-header"><h3>Criações Recentes</h3><button class="btn btn-sm btn-ghost" onclick="switchDash('files',null)">Ver todas</button></div>
+      <div class="recent-grid">
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2d1b69);">👩‍🦰</div><div class="recent-info"><div class="recent-name">Sophia — Fitness</div><div class="recent-meta">Persona • criada recentemente</div></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#0a1628,#1e3a5f);">🎬</div><div class="recent-info"><div class="recent-name">Vídeo Review Produto</div><div class="recent-meta">Vídeo • 15s</div></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#0d2818,#1a4731);">🖼</div><div class="recent-info"><div class="recent-name">Post Instagram — Cosmético</div><div class="recent-meta">Imagem • 1:1 • hoje</div></div></div>
+      </div>
+    </div>
+
+    <!-- CREATE PERSONA -->
+    <div class="page-content fade-in" id="dash-create-persona" style="display:none;">
+      <div class="page-header"><h2>✨ Criar Influencer</h2><p>Defina a aparência e personalidade da sua influencer virtual.</p></div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;">
+        <div>
+          <div class="card" style="margin-bottom:1.5rem;">
+            <h3 class="heading" style="font-size:1rem;margin-bottom:1.5rem;color:var(--muted);">IDENTIDADE DA PERSONA</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group"><label class="form-label">Nome da Persona</label><input class="form-input" placeholder="Ex: Sophia, Luna, Maya..." id="pn-name" oninput="updatePreview()"></div>
+              <div class="form-group"><label class="form-label">Nicho</label><select class="form-select" id="pn-niche" onchange="updatePreview()"><option value="">Selecione o nicho</option><option>Fitness & Saúde</option><option>Moda & Estilo</option><option>Beleza & Cosméticos</option><option>Finanças & Investimentos</option><option>Tecnologia</option><option>Gastronomia</option><option>Viagem & Lifestyle</option><option>Games</option></select></div>
+              <div class="form-group"><label class="form-label">Gênero</label><select class="form-select"><option>Feminino</option><option>Masculino</option><option>Não-binário</option></select></div>
+              <div class="form-group"><label class="form-label">Faixa Etária</label><select class="form-select"><option>18-24 anos</option><option>25-32 anos</option><option>33-40 anos</option><option>41-50 anos</option></select></div>
+              <div class="form-group"><label class="form-label">Cor do Cabelo</label><select class="form-select"><option>Preto</option><option>Castanho escuro</option><option>Castanho claro</option><option>Loiro</option><option>Ruivo</option><option>Colorido</option></select></div>
+              <div class="form-group"><label class="form-label">Tom de Pele</label><select class="form-select"><option>Claro</option><option>Médio</option><option>Moreno</option><option>Negro</option></select></div>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:1.5rem;">
+            <h3 class="heading" style="font-size:1rem;margin-bottom:1.5rem;color:var(--muted);">ESTILO & PERSONALIDADE</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group"><label class="form-label">Estilo Visual</label><select class="form-select"><option>Natural / Realista</option><option>Glamouroso</option><option>Streetwear</option><option>Corporativo</option><option>Fitness</option><option>Editorial</option></select></div>
+              <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Descrição da Aparência</label><textarea class="form-textarea" placeholder="Descreva como você quer que a influencer apareça. Ex: Mulher jovem, cabelo ondulado, sorriso natural, olhos expressivos..."></textarea></div>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:1.5rem;">
+            <h3 class="heading" style="font-size:1rem;margin-bottom:1rem;color:var(--muted);">IMAGEM DE REFERÊNCIA (OPCIONAL)</h3>
+            <div class="upload-zone"><div class="upload-icon">📸</div><div class="upload-text"><strong>Clique para fazer upload</strong> ou arraste aqui<br>PNG, JPG ou WEBP até 10MB</div></div>
+          </div>
+          <button class="btn btn-neon btn-lg" onclick="simulateGenerate('persona')">✨ Criar Influencer — 50 créditos</button>
+        </div>
+        <div>
+          <div class="card" style="position:sticky;top:80px;">
+            <h3 class="heading" style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">PRÉ-VISUALIZAÇÃO</h3>
+            <div class="persona-preview">
+              <div class="preview-placeholder" id="preview-ph"><span>👤</span><p>Preencha os campos para visualizar</p></div>
+              <div class="preview-info" id="preview-info" style="display:none;">
+                <div class="preview-name" id="preview-name">—</div>
+                <div style="font-size:.8rem;color:var(--muted);" id="preview-niche">Nicho não definido</div>
+                <div class="preview-tags"><span class="preview-tag">Feminino</span><span class="preview-tag">25-32 anos</span><span class="preview-tag">Natural</span></div>
+              </div>
+            </div>
+            <div style="margin-top:1rem;font-size:.8rem;color:var(--muted);text-align:center;">⚡ Custo: <strong style="color:var(--text);">50 créditos</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GEN IMAGE -->
+    <div class="page-content fade-in" id="dash-gen-image" style="display:none;">
+      <div class="page-header"><h2>🖼 Gerar Imagem</h2><p>Crie imagens realistas com sua influencer e produto integrado.</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+        <div>
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div style="display:flex;flex-direction:column;gap:1rem;">
+              <div class="form-group"><label class="form-label">Selecionar Persona</label><select class="form-select"><option>Sophia — Fitness</option><option>Luna — Moda</option><option>Maya — Beleza</option></select></div>
+              <div class="form-group"><label class="form-label">Upload do Produto</label><div class="upload-zone" style="padding:1rem;"><div class="upload-icon" style="font-size:1.5rem;">📦</div><div class="upload-text" style="font-size:.8rem;"><strong>Upload do produto</strong></div></div></div>
+              <div class="form-group"><label class="form-label">Prompt Principal</label><textarea class="form-textarea" placeholder="Descreva como você quer a cena..." style="min-height:80px;"></textarea></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="form-group"><label class="form-label">Estilo da Imagem</label><select class="form-select"><option>Realista</option><option>Editorial</option><option>Lifestyle</option><option>Studio</option></select></div>
+                <div class="form-group"><label class="form-label">Proporção</label><select class="form-select"><option>1:1 — Square</option><option>9:16 — Stories</option><option>16:9 — Landscape</option><option>4:5 — Portrait</option></select></div>
+              </div>
+              <div class="form-group"><label class="form-label">Realismo — <span style="color:var(--neon);">85%</span></label><input type="range" min="0" max="100" value="85"></div>
+              <div style="display:flex;flex-direction:column;gap:.6rem;">
+                <div class="checkbox-group"><input type="checkbox" checked><label>Produto na mão da influencer</label></div>
+                <div class="checkbox-group"><input type="checkbox"><label>Produto integrado na cena</label></div>
+              </div>
+              <button class="btn btn-neon" onclick="simulateGenerate('image')">🖼 Gerar Imagem — 5 créditos</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-header"><h3>Resultados</h3></div>
+          <div class="img-gallery">
+            <div class="gallery-item"><div class="gallery-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2d1b69);">👩‍🦰</div><div class="gallery-actions"><button class="btn btn-sm btn-dark" style="flex:1;" onclick="notify('Download','Imagem baixada!')">⬇ Baixar</button><button class="btn btn-sm btn-ghost" onclick="notify('Prompt','Prompt copiado!')">↺</button></div></div>
+            <div class="gallery-item"><div class="gallery-thumb" style="background:linear-gradient(135deg,#0a1628,#1e3a5f);">🌟</div><div class="gallery-actions"><button class="btn btn-sm btn-dark" style="flex:1;" onclick="notify('Download','Imagem baixada!')">⬇ Baixar</button><button class="btn btn-sm btn-ghost" onclick="notify('Prompt','Prompt copiado!')">↺</button></div></div>
+            <div class="gallery-item"><div class="gallery-thumb" style="background:linear-gradient(135deg,#0d2818,#1a4731);">✨</div><div class="gallery-actions"><button class="btn btn-sm btn-dark" style="flex:1;" onclick="notify('Download','Imagem baixada!')">⬇ Baixar</button><button class="btn btn-sm btn-ghost" onclick="notify('Prompt','Prompt copiado!')">↺</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GEN VIDEO -->
+    <div class="page-content fade-in" id="dash-gen-video" style="display:none;">
+      <div class="page-header"><h2>🎬 Gerar Vídeo</h2><p>Transforme sua imagem em vídeo animado com IA.</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+        <div><div class="card">
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="form-group"><label class="form-label">Selecionar Imagem</label><select class="form-select"><option>Post Instagram — Cosmético</option><option>Sophia Fitness — Review</option></select></div>
+            <div class="form-group"><label class="form-label">Prompt de Animação</label><textarea class="form-textarea" placeholder="Descreva o movimento..." style="min-height:80px;"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group"><label class="form-label">Duração</label><select class="form-select"><option>5 segundos</option><option>10 segundos</option><option>15 segundos</option><option>30 segundos</option></select></div>
+              <div class="form-group"><label class="form-label">Tipo</label><select class="form-select"><option>UGC</option><option>Selfie</option><option>Anúncio</option><option>Review</option><option>Cinematic</option></select></div>
+            </div>
+            <div class="form-group"><label class="form-label">Intensidade de Movimento — <span style="color:var(--neon);">70%</span></label><input type="range" min="0" max="100" value="70"></div>
+            <button class="btn btn-neon" onclick="simulateGenerate('video')">🎬 Gerar Vídeo — 15 créditos</button>
+          </div>
+        </div></div>
+        <div>
+          <div class="section-header"><h3>Preview do Vídeo</h3></div>
+          <div class="video-preview" id="video-preview"><div class="video-preview-icon">🎬</div><p style="color:var(--muted);font-size:.9rem;">Seu vídeo aparecerá aqui</p></div>
+          <div id="video-ready" style="display:none;margin-top:1rem;"><button class="btn btn-neon" style="width:100%;justify-content:center;" onclick="notify('Download','Vídeo baixado!')">⬇ Baixar Vídeo</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOTION SYNC -->
+    <div class="page-content fade-in" id="dash-motion-sync" style="display:none;">
+      <div class="page-header"><h2>🎭 Motion Sync</h2><p>Sincronize movimentos da sua influencer usando um vídeo de referência.</p></div>
+      <div class="motion-grid">
+        <div><div class="card">
+          <h3 class="heading" style="font-size:1rem;margin-bottom:1.25rem;color:var(--muted);">CONFIGURAÇÃO</h3>
+          <div style="display:flex;flex-direction:column;gap:1.25rem;">
+            <div class="form-group"><label class="form-label">Imagem da Persona</label><div class="upload-zone"><div class="upload-icon">👤</div><div class="upload-text"><strong>Upload da persona</strong><br>PNG ou JPG</div></div></div>
+            <div class="form-group"><label class="form-label">Vídeo de Referência</label><div class="upload-zone"><div class="upload-icon">🎥</div><div class="upload-text"><strong>Upload do vídeo referência</strong><br>MP4 até 50MB</div></div></div>
+            <div class="form-group"><label class="form-label">Instruções Adicionais (opcional)</label><textarea class="form-textarea" placeholder="Ex: Manter expressão neutra..." style="min-height:70px;"></textarea></div>
+            <button class="btn btn-neon" onclick="simulateGenerate('motion')">🎭 Sincronizar Movimento — 30 créditos</button>
+          </div>
+        </div></div>
+        <div>
+          <div class="motion-result">
+            <div class="section-header" style="margin-bottom:1rem;"><h3>Resultado</h3></div>
+            <div class="video-preview" id="motion-preview"><div class="video-preview-icon">🎭</div><p style="color:var(--muted);">O vídeo sincronizado aparecerá aqui</p></div>
+            <div id="motion-ready" style="display:none;margin-top:1rem;"><button class="btn btn-neon" style="width:100%;justify-content:center;" onclick="notify('Download','Vídeo baixado!')">⬇ Baixar Resultado</button></div>
+          </div>
+          <div class="card" style="margin-top:1rem;">
+            <div class="section-header" style="margin-bottom:.75rem;"><h3>Histórico</h3></div>
+            <div style="display:flex;flex-direction:column;gap:.5rem;">
+              <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem;background:var(--card2);border-radius:8px;border:1px solid var(--border);"><span style="font-size:1.2rem;">🎭</span><div style="flex:1;"><div style="font-size:.8rem;font-weight:600;">Sophia — UGC Review</div><div style="font-size:.72rem;color:var(--muted);">15s</div></div><button class="btn btn-sm btn-ghost" onclick="notify('Download','Baixado!')">⬇</button></div>
+              <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem;background:var(--card2);border-radius:8px;border:1px solid var(--border);"><span style="font-size:1.2rem;">🎭</span><div style="flex:1;"><div style="font-size:.8rem;font-weight:600;">Luna — Dance Move</div><div style="font-size:.72rem;color:var(--muted);">10s</div></div><button class="btn btn-sm btn-ghost" onclick="notify('Download','Baixado!')">⬇</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALTER PERSONA -->
+    <div class="page-content fade-in" id="dash-alter-persona" style="display:none;">
+      <div class="page-header"><h2>🔄 Alterar Persona</h2><p>Customize roupa, fundo, expressão e muito mais.</p></div>
+      <div class="alter-grid">
+        <div>
+          <div class="alter-preview">
+            <div style="height:280px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:linear-gradient(135deg,#1a0a2e,#2d1b69);border-bottom:1px solid var(--border);">👩‍🦰</div>
+            <div style="padding:1rem;"><div style="font-weight:600;margin-bottom:.25rem;">Sophia</div><div style="font-size:.8rem;color:var(--muted);">Fitness • 25-32 anos</div></div>
+          </div>
+          <div style="margin-top:1rem;"><button class="btn btn-neon" style="width:100%;justify-content:center;" onclick="simulateGenerate('alter')">🔄 Aplicar Alterações — 10 créditos</button></div>
+        </div>
+        <div class="alter-controls">
+          <div class="card"><h3 class="heading" style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">VESTIMENTA</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;"><div class="form-group"><label class="form-label">Estilo de Roupa</label><select class="form-select"><option>Casual</option><option>Fitness</option><option>Corporativo</option><option>Elegante</option><option>Streetwear</option></select></div><div class="form-group"><label class="form-label">Cor Principal</label><select class="form-select"><option>Preto</option><option>Branco</option><option>Colorido</option><option>Neutro</option></select></div></div></div>
+          <div class="card"><h3 class="heading" style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">CENÁRIO</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;"><div class="form-group"><label class="form-label">Fundo</label><select class="form-select"><option>Neutro gradiente</option><option>Estúdio branco</option><option>Ambiente fitness</option><option>Externo urbano</option></select></div><div class="form-group"><label class="form-label">Iluminação</label><select class="form-select"><option>Natural suave</option><option>Studio luz dura</option><option>Golden hour</option><option>Low key</option></select></div></div></div>
+          <div class="card"><h3 class="heading" style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">EXPRESSÃO & POSE</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;"><div class="form-group"><label class="form-label">Expressão</label><select class="form-select"><option>Sorridente</option><option>Neutra</option><option>Séria</option><option>Confiante</option></select></div><div class="form-group"><label class="form-label">Pose</label><select class="form-select"><option>Frontal</option><option>Diagonal</option><option>Perfil</option><option>3/4</option></select></div></div><div class="form-group" style="margin-top:.75rem;"><label class="form-label">Ajuste de Estilo</label><input type="range" min="0" max="100" value="60"><div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted2);margin-top:.25rem;"><span>Suave</span><span>Dramático</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILES -->
+    <div class="page-content fade-in" id="dash-files" style="display:none;">
+      <div class="page-header"><h2>📁 Arquivos</h2><p>Todas as suas criações organizadas em um só lugar.</p></div>
+      <div class="file-filters">
+        <button class="filter-btn active" onclick="setFilter(this)">Todos</button>
+        <button class="filter-btn" onclick="setFilter(this)">Personas</button>
+        <button class="filter-btn" onclick="setFilter(this)">Imagens</button>
+        <button class="filter-btn" onclick="setFilter(this)">Vídeos</button>
+      </div>
+      <div class="files-grid">
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2d1b69);">👩‍🦰</div><div class="recent-info"><div class="recent-name">Sophia</div><div class="recent-meta">Persona • Fitness</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Perfil exportado!')">⬇ Exportar</button></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#0a1628,#1e3a5f);">🌟</div><div class="recent-info"><div class="recent-name">Review Produto</div><div class="recent-meta">Imagem • 1:1</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Imagem baixada!')">⬇ Baixar</button></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#0d2818,#1a4731);">🎬</div><div class="recent-info"><div class="recent-name">UGC Cosmético</div><div class="recent-meta">Vídeo • 15s</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Vídeo baixado!')">⬇ Baixar</button></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#280a0a,#5f1e1e);">✨</div><div class="recent-info"><div class="recent-name">Luna</div><div class="recent-meta">Persona • Moda</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Perfil exportado!')">⬇ Exportar</button></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#1a1a0a,#3f3f0a);">🎭</div><div class="recent-info"><div class="recent-name">Motion Sync #1</div><div class="recent-meta">Vídeo • 10s</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Vídeo baixado!')">⬇ Baixar</button></div></div>
+        <div class="recent-item"><div class="recent-thumb" style="background:linear-gradient(135deg,#0a1a28,#0a3f5f);">🖼</div><div class="recent-info"><div class="recent-name">Stories Produto</div><div class="recent-meta">Imagem • 9:16</div><button class="btn btn-sm btn-ghost" style="margin-top:.5rem;width:100%;justify-content:center;" onclick="notify('Download','Imagem baixada!')">⬇ Baixar</button></div></div>
+      </div>
+    </div>
+
+    <!-- CREDITS -->
+    <div class="page-content fade-in" id="dash-credits" style="display:none;">
+      <div class="page-header"><h2>⚡ Créditos</h2><p>Gerencie seu uso de créditos e histórico de consumo.</p></div>
+      <div class="credits-hero">
+        <div class="credits-num" id="credits-big">1.470</div>
+        <div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1rem;margin-bottom:.25rem;">Créditos disponíveis</div>
+          <div style="color:var(--muted);font-size:.9rem;margin-bottom:.75rem;">Plano Builder — 1.470 créditos/mês</div>
+          <div class="credits-bar" style="width:240px;height:8px;"><div class="credits-fill" style="width:100%;"></div></div>
+        </div>
+        <div style="margin-left:auto;"><button class="btn btn-neon" onclick="switchDash('subscription',null)">⬆ Fazer Upgrade</button></div>
+      </div>
+      <div class="card">
+        <div class="section-header" style="margin-bottom:1rem;"><h3>Tabela de Custos</h3></div>
+        <table class="history-table" style="margin-bottom:1.5rem;">
+          <tr><th>Operação</th><th>Créditos</th></tr>
+          <tr><td>Criar Influencer</td><td style="color:var(--neon);">50 créditos</td></tr>
+          <tr><td>Gerar Imagem</td><td style="color:var(--neon);">5 créditos</td></tr>
+          <tr><td>Gerar Vídeo (5s)</td><td style="color:var(--neon);">15 créditos</td></tr>
+          <tr><td>Gerar Vídeo (15s)</td><td style="color:var(--neon);">40 créditos</td></tr>
+          <tr><td>Motion Sync (10s)</td><td style="color:var(--neon);">30 créditos</td></tr>
+          <tr><td>Alterar Persona</td><td style="color:var(--neon);">10 créditos</td></tr>
+        </table>
+        <div class="section-header" style="margin-bottom:1rem;"><h3>Histórico de Uso</h3></div>
+        <table class="history-table" id="history-table">
+          <tr><th>Operação</th><th>Data</th><th>Créditos</th></tr>
+          <tr><td>Recarga mensal — Plano Builder</td><td>Hoje</td><td style="color:var(--neon);">+1.470</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION -->
+    <div class="page-content fade-in" id="dash-subscription" style="display:none;">
+      <div class="page-header"><h2>💎 Assinatura</h2><p>Gerencie seu plano e faça upgrade quando quiser.</p></div>
+      <div class="card" style="margin-bottom:1.5rem;border-color:rgba(217,255,63,0.15);background:rgba(217,255,63,0.02);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div><div class="badge badge-neon" style="margin-bottom:.75rem;">Plano Atual</div><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.5rem;margin-bottom:.25rem;">Builder</div><div style="color:var(--muted);">R$ 147/mês</div></div>
+          <div style="text-align:right;"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2rem;color:var(--neon);">1.470</div><div style="font-size:.8rem;color:var(--muted);">créditos/mês</div></div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:.75rem;">
+          <button class="btn btn-ghost" onclick="notify('Gerenciar','Sistema de pagamento em breve.')">Gerenciar Assinatura</button>
+          <button class="btn btn-ghost" style="color:#ff6b6b;border-color:rgba(255,107,107,0.2);" onclick="notify('Cancelar','Entre em contato com o suporte.')">Cancelar Plano</button>
+        </div>
+      </div>
+      <div class="pricing-grid" style="max-width:100%;">
+        <div class="plan-card"><div class="plan-name">Building</div><div class="plan-price"><sup>R$</sup>97<span> /mês</span></div><div class="plan-credits">⚡ 970 créditos / mês</div><button class="btn btn-dark" style="width:100%;justify-content:center;" onclick="notify('Downgrade','Em breve.')">Selecionar</button></div>
+        <div class="plan-card popular"><div class="popular-badge">✓ PLANO ATUAL</div><div class="plan-name">Builder</div><div class="plan-price"><sup>R$</sup>147<span> /mês</span></div><div class="plan-credits">⚡ 1.470 créditos / mês</div><button class="btn btn-outline-neon" style="width:100%;justify-content:center;" disabled>Plano Atual</button></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page-content fade-in" id="dash-settings" style="display:none;">
+      <div class="page-header"><h2>⚙ Configurações</h2><p>Personalize sua experiência na plataforma.</p></div>
+      <div style="display:flex;flex-direction:column;gap:1.5rem;max-width:600px;">
+        <div class="card">
+          <h3 class="heading" style="font-size:1rem;margin-bottom:1.25rem;color:var(--muted);">PERFIL</h3>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="cfg-name" placeholder="Seu nome"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="cfg-email" placeholder="seu@email.com" readonly style="opacity:.6;"></div>
+            <button class="btn btn-neon" style="align-self:flex-start;" onclick="saveProfile()">Salvar Alterações</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="heading" style="font-size:1rem;margin-bottom:1.25rem;color:var(--muted);">SEGURANÇA</h3>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="form-group"><label class="form-label">Nova senha</label><input class="form-input" type="password" placeholder="Nova senha"></div>
+            <button class="btn btn-dark" style="align-self:flex-start;" onclick="notify('Senha','Altere sua senha pelo link enviado ao seu e-mail.')">Alterar Senha</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="heading" style="font-size:1rem;margin-bottom:1.25rem;color:var(--muted);">NOTIFICAÇÕES</h3>
+          <div style="display:flex;flex-direction:column;gap:.75rem;">
+            <div class="checkbox-group"><input type="checkbox" checked><label>Notificar quando geração concluir</label></div>
+            <div class="checkbox-group"><input type="checkbox" checked><label>Avisos sobre créditos baixos</label></div>
+            <div class="checkbox-group"><input type="checkbox"><label>Novidades e atualizações da plataforma</label></div>
+          </div>
+        </div>
+        <div class="card" style="border-color:rgba(255,80,80,0.15);">
+          <h3 class="heading" style="font-size:1rem;margin-bottom:1rem;color:#ff6b6b;">ZONA DE PERIGO</h3>
+          <button class="btn btn-sm" style="background:rgba(255,80,80,.08);color:#ff6b6b;border:1px solid rgba(255,80,80,.2);" onclick="notify('Cuidado!','Esta ação é irreversível.')">Excluir conta</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /page-dashboard -->
+
+<script>
+// ============ SUPABASE ============
+const SB_URL = 'https://huvlqgkzjtvjctvxffck.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1dmxxZ2t6anR2amN0dnhmZmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODA1NTUsImV4cCI6MjA4OTk1NjU1NX0.uxQkj3VOWPc-Udmssp7F5mKAl1T0VcUefCysllSC8lI'
+let sb = null, currentUser = null, userProfile = null
+
+function initSB() {
+  try {
+    sb = window.supabase.createClient(SB_URL, SB_KEY)
+    sb.auth.onAuthStateChange(async (ev, ses) => {
+      if (ev === 'SIGNED_IN' && ses) {
+        currentUser = ses.user
+        await loadProfile(ses.user.id)
+        enterDashboard()
+      } else if (ev === 'SIGNED_OUT') {
+        currentUser = null; userProfile = null
+        showPage('landing')
+      }
+    })
+    checkSession()
+  } catch(e) { console.error('SB init:', e) }
+}
+
+async function checkSession() {
+  if (!sb) return
+  const { data: { session } } = await sb.auth.getSession()
+  if (session) { currentUser = session.user; await loadProfile(session.user.id) }
+}
+
+async function loadProfile(uid) {
+  try {
+    const { data } = await sb.from('profiles').select('*').eq('id', uid).single()
+    if (data) { userProfile = data; updateUI(data) }
+    else updateUI({ full_name: currentUser?.email?.split('@')[0], credits: 1470 })
+  } catch(e) { updateUI({ full_name: currentUser?.email?.split('@')[0], credits: 1470 }) }
+}
+
+async function loadStats() {
+  if (!sb || !currentUser) return
+  try {
+    const [p, i, v] = await Promise.all([
+      sb.from('influencers').select('id', { count:'exact', head:true }).eq('user_id', currentUser.id),
+      sb.from('generated_images').select('id', { count:'exact', head:true }).eq('user_id', currentUser.id),
+      sb.from('generated_videos').select('id', { count:'exact', head:true }).eq('user_id', currentUser.id)
+    ])
+    setText('stat-p', p.count || 0)
+    setText('stat-i', i.count || 0)
+    setText('stat-v', v.count || 0)
+    if (userProfile) setText('stat-cr', (userProfile.credits || 1470).toLocaleString('pt-BR'))
+  } catch(e) {}
+}
+
+function updateUI(p) {
+  const name = p?.full_name || currentUser?.email?.split('@')[0] || 'Criador'
+  const credits = p?.credits ?? 1470
+  const initial = name.charAt(0).toUpperCase()
+  setText('top-nm', name); setText('top-av', initial); setText('dash-welcome', name)
+  setText('top-cr', credits.toLocaleString('pt-BR'))
+  setText('stat-cr', credits.toLocaleString('pt-BR'))
+  setText('credits-big', credits.toLocaleString('pt-BR'))
+  setText('sb-cr-txt', credits.toLocaleString('pt-BR') + ' / 1.470')
+  const pct = Math.min(100, (credits / 1470) * 100)
+  const bar = document.getElementById('sb-cr-bar')
+  if (bar) bar.style.width = pct + '%'
+  if (document.getElementById('cfg-name')) document.getElementById('cfg-name').value = name
+  if (document.getElementById('cfg-email') && currentUser?.email) document.getElementById('cfg-email').value = currentUser.email
+}
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val }
+
+function enterDashboard() {
+  showPage('dashboard')
+  switchDash('home', null)
+  loadStats()
+}
+
+// ============ ROUTING ============
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'))
+  const el = document.getElementById('page-' + p)
+  if (el) el.classList.add('active')
+  const h = document.getElementById('header')
+  if (h) h.style.display = p === 'landing' ? 'flex' : 'none'
+  window.scrollTo(0, 0)
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(id)
+  if (el) el.scrollIntoView({ behavior: 'smooth' })
+}
+
+// ============ DASH NAV ============
+const TITLES = { 'home':'Dashboard','create-persona':'Criar Influencer','gen-image':'Gerar Imagem','gen-video':'Gerar Vídeo','motion-sync':'Motion Sync','alter-persona':'Alterar Persona','files':'Arquivos','credits':'Créditos','subscription':'Assinatura','settings':'Configurações' }
+
+function switchDash(section, navEl) {
+  document.querySelectorAll('[id^="dash-"]').forEach(el => el.style.display = 'none')
+  const target = document.getElementById('dash-' + section)
+  if (target) { target.style.display = 'block'; target.classList.add('fade-in') }
+  if (navEl) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'))
+    navEl.classList.add('active')
+  }
+  const tb = document.getElementById('topbar-title')
+  if (tb) tb.textContent = TITLES[section] || 'Dashboard'
+}
+
+// ============ AUTH ============
+function switchAuth(type) {
+  ;['login','register','recover'].forEach(f => {
+    document.getElementById('form-' + f).style.display = 'none'
+  })
+  document.getElementById('form-' + type).style.display = 'block'
+}
+
+function showMsg(id, msg) {
+  const el = document.getElementById(id); if (!el) return
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return }
+  el.textContent = msg; el.style.display = 'block'
+}
+
+async function doLogin() {
+  const email = document.getElementById('lei').value.trim()
+  const pwd = document.getElementById('lpi').value
+  const btn = document.getElementById('lb')
+  showMsg('lo', ''); showMsg('le', '')
+  if (!email || !pwd) { showMsg('le', 'Preencha todos os campos.'); return }
+  btn.textContent = 'Entrando...'; btn.disabled = true
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd })
+  if (error) {
+    const m = { 'Invalid login credentials':'E-mail ou senha incorretos.','Email not confirmed':'Confirme seu e-mail.' }
+    showMsg('le', m[error.message] || error.message)
+    btn.textContent = 'Entrar na plataforma'; btn.disabled = false
+    return
+  }
+  showMsg('lo', 'Login realizado! Carregando...')
+  currentUser = data.user
+  await loadProfile(data.user.id)
+  setTimeout(() => enterDashboard(), 600)
+}
+
+async function doRegister() {
+  const name = document.getElementById('rni').value.trim()
+  const email = document.getElementById('rei').value.trim()
+  const pwd = document.getElementById('rpi').value
+  const btn = document.getElementById('rb')
+  showMsg('ro', ''); showMsg('re', '')
+  if (!name || !email || !pwd) { showMsg('re', 'Preencha todos os campos.'); return }
+  if (pwd.length < 6) { showMsg('re', 'A senha precisa ter ao menos 6 caracteres.'); return }
+  btn.textContent = 'Criando conta...'; btn.disabled = true
+  const { data, error } = await sb.auth.signUp({ email, password: pwd, options: { data: { full_name: name } } })
+  if (error) {
+    showMsg('re', error.message.includes('already registered') ? 'E-mail já cadastrado.' : error.message)
+    btn.textContent = 'Criar conta grátis'; btn.disabled = false
+    return
+  }
+  if (data.session) {
+    currentUser = data.user
+    await loadProfile(data.user.id)
+    showMsg('ro', 'Conta criada! Entrando...')
+    setTimeout(() => enterDashboard(), 600)
+  } else {
+    showMsg('ro', 'Conta criada! Verifique seu e-mail para confirmar o cadastro.')
+    btn.textContent = 'Criar conta grátis'; btn.disabled = false
+  }
+}
+
+async function doRecover() {
+  const email = document.getElementById('rci').value.trim()
+  const btn = document.getElementById('rcb')
+  showMsg('rco', ''); showMsg('rce', '')
+  if (!email) { showMsg('rce', 'Digite seu e-mail.'); return }
+  btn.textContent = 'Enviando...'; btn.disabled = true
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href })
+  if (error) { showMsg('rce', error.message); btn.textContent = 'Enviar link'; btn.disabled = false; return }
+  showMsg('rco', 'Link enviado! Verifique sua caixa de entrada.')
+  btn.textContent = 'Enviar link de recuperação'; btn.disabled = false
+}
+
+async function doLogout() {
+  await sb.auth.signOut()
+  currentUser = null; userProfile = null
+  showPage('landing')
+  notify('Até logo!', 'Você saiu da plataforma.')
+}
+
+async function saveProfile() {
+  if (!sb || !currentUser) return
+  const name = document.getElementById('cfg-name').value.trim()
+  if (!name) return
+  await sb.from('profiles').update({ full_name: name }).eq('id', currentUser.id)
+  if (userProfile) userProfile.full_name = name
+  updateUI({ ...userProfile, full_name: name })
+  notify('Salvo!', 'Perfil atualizado com sucesso.')
+}
+
+// ============ UTILS ============
+function toggleFaq(btn) { btn.parentElement.classList.toggle('open') }
+
+function updatePreview() {
+  const name = document.getElementById('pn-name')?.value
+  const niche = document.getElementById('pn-niche')?.value
+  const ph = document.getElementById('preview-ph')
+  const info = document.getElementById('preview-info')
+  if (name || niche) {
+    if (ph) ph.style.display = 'none'
+    if (info) info.style.display = 'block'
+    setText('preview-name', name || 'Sem nome')
+    setText('preview-niche', niche || 'Nicho não definido')
+  } else {
+    if (ph) ph.style.display = 'flex'
+    if (info) info.style.display = 'none'
+  }
+}
+
+function simulateGenerate(type) {
+  const msgs = { persona:['Influencer criada!','Persona adicionada à sua biblioteca.'],image:['Imagem gerada!','Disponível para download.'],alter:['Persona atualizada!','Alterações aplicadas.'] }
+  if (type === 'video') {
+    const p = document.getElementById('video-preview')
+    p.innerHTML = '<div class="generating"><div class="spinner"></div><p>Gerando vídeo...</p></div>'
+    setTimeout(() => {
+      p.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:.75rem;"><div class="play-btn">▶</div><p style="color:var(--muted);font-size:.875rem;">Prévia do vídeo — 15s</p></div>'
+      document.getElementById('video-ready').style.display = 'block'
+      notify('Vídeo Pronto!', 'Seu vídeo foi gerado com sucesso.')
+    }, 2500)
+    return
+  }
+  if (type === 'motion') {
+    const p = document.getElementById('motion-preview')
+    p.innerHTML = '<div class="generating"><div class="spinner"></div><p>Sincronizando movimento...</p></div>'
+    setTimeout(() => {
+      p.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:.75rem;"><div class="play-btn">▶</div><p style="color:var(--muted);font-size:.875rem;">Motion Sync concluído — 10s</p></div>'
+      document.getElementById('motion-ready').style.display = 'block'
+      notify('Motion Sync!', 'Vídeo sincronizado com sucesso.')
+    }, 3000)
+    return
+  }
+  const [title, msg] = msgs[type] || ['Pronto!','Concluído.']
+  notify(title, msg)
+}
+
+function setFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+}
+
+let notifTimer = null
+function notify(title, msg) {
+  setText('notif-title', title); setText('notif-msg', msg)
+  const n = document.getElementById('notif'); n.classList.add('show')
+  if (notifTimer) clearTimeout(notifTimer)
+  notifTimer = setTimeout(() => n.classList.remove('show'), 3500)
+}
+
+// ============ INIT ============
+window.addEventListener('load', initSB)
+showPage('landing')
+</script>
+</body>
+</html>
